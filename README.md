@@ -6,6 +6,8 @@ academic standards data stored in couchDB.
 
 ## Installiation
 run
+
     cd ccss
+
     npm install
  
