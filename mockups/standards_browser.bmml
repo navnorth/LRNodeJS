@@ -35,7 +35,7 @@
     </control>
     <control controlID="13" controlTypeID="com.balsamiq.mockups::VerticalScrollBar" x="852" y="139" w="-1" h="412" measuredW="16" measuredH="100" zOrder="6" locked="false" isInGroup="-1">
       <controlProperties>
-        <value>27</value>
+        <value>12</value>
       </controlProperties>
     </control>
     <control controlID="14" controlTypeID="com.balsamiq.mockups::SubTitle" x="252" y="131" w="-1" h="-1" measuredW="224" measuredH="33" zOrder="7" locked="false" isInGroup="-1">
