@@ -1,0 +1,22 @@
+<h2>Choose a Standard Set</h2>
+
+{{#categories}}
+  <div class="category" data-category="{{name}}">
+    <h3>{{name}}</h3>
+    <ul>
+      {{#standards}}
+        <li class="standard">
+	  <a href="#" data-standard="{{.}}" >{{.}}</a>
+	</li>
+      {{/standards}}
+    </ul>
+  </div>
+{{/categories}}
+
+<script>
+    head.ready(function() {
+	$(document).ready(function () {
+	});
+    });
+</script>
+

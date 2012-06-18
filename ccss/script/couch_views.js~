@@ -1,0 +1,5 @@
+# TODO turn this into a script
+# categories -> categories
+function(doc) {
+  emit(doc.category, doc.standard);
+}
