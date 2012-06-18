@@ -1,0 +1,64 @@
+<div id="browser">
+  <div id="categories">
+    <ul>
+      {{#categories}}
+        <li class="category"><a href="#" data-category="{{name}}">{{name}}</a></li>
+      {{/categories}}
+    </ul>
+  </div>
+  <div id="view-port">
+    <div id="crumbs"></div>
+    <div id="hierarchy"></div>
+  </div>
+</div>    
+
+<script>
+
+    // TODO move much of this js to lreg 
+
+    head.ready(function() {
+	$(document).ready(function () {
+	    var categoryClick = function (e) {
+		var category    = $(e.target).data('category');
+		var categoryUrl = '/standards/' + escape(category);
+
+		$('#hierarchy').load(categoryUrl, function () {
+		    $('#hierarchy').find('li.standard a' ).click( standardClick );
+
+		    var categoryLink = $('<a href="#" data-category="' + category + '">'
+					 + category + '</a>');
+		    categoryLink.click(categoryClick);
+
+		    CRUMBS.clear($('#crumbs'));
+		    CRUMBS.push($('#crumbs'), categoryLink);
+		});
+	    };
+
+	    var standardClick = function (e) {
+		var standard = $(e.target).data('standard');
+		var category = $(e.target).data('category')
+		    || $(e.target).closest('.category').data('category');
+
+		var categoryLink = $('<a href="#" data-category="' + category + '">'
+				     + category + '</a>');
+		categoryLink.click(categoryClick);
+		
+		var standardLink = $('<a href="#" data-standard="' + standard + '"'
+				     + ' data-category="' + category + '">'
+				     + standard + '</a>');
+		standardLink.click(standardClick);
+
+		CRUMBS.clear($('#crumbs'));
+		CRUMBS.push($('#crumbs'), categoryLink);
+		CRUMBS.push($('#crumbs'), standardLink);
+
+		LREG.loadNodes($('#hierarchy'), { standard: escape(standard) });
+	    };
+
+	    LREG.setCategoryClick(categoryClick);
+	    LREG.setStandardClick(standardClick);
+	    LREG.start($('#hierarchy'));
+	});
+    });
+</script>
+
