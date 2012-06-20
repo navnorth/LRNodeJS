@@ -5,6 +5,7 @@
     "express": "latest",
     "mustache":"latest",
     "optimist":"latest",
-    "couchdb-api":"latest"
+    "couchdb-api":"latest",
+    "prompt":"latest"
   }
 }
