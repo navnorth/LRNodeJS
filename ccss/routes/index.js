@@ -4,12 +4,16 @@ var couchdb = require('couchdb-api');
 var server       = couchdb.srv('localhost', 5984, false, true);
 var standardsDb  = server.db('standards');
 var categoriesDb = server.db('categories');
+var resourcesDb  = server.db('resource_data');
 
 // views
 var nodesView     = standardsDb.ddoc('nodes').view('standard-grade-parent');
 var standardsView = standardsDb.ddoc('nodes').view('standards');
 
 var categoriesView = categoriesDb.ddoc('categories').view('categories');
+
+var resourcesView = resourcesDb.ddoc('standards-alignment-related')
+                   .view('resource-by-discriminator');
 
 // route to display nodes hierarchically
 //   body.standard is the set the nodes belong to
@@ -36,14 +40,12 @@ exports.nodes = function( request, response, next ) {
     nodesView.query(query, function(err, result) {
 	if (err) return next(err);
 
-	var viewOptions = {
-	    layout: false,
-	    locals: {
-		nodes: result.rows.map( function(n) {
-		    return n.value;
-		})
-	    }
-	};
+	var docs = result.rows.map( function(n) { return n.value; } );
+
+	var viewOptions = {};
+	viewOptions.layout = false;
+	viewOptions.locals = {};
+	viewOptions.locals.nodes = docs;
 
 	response.render('nodes.html', viewOptions);
     });
@@ -78,7 +80,7 @@ exports.standards = function( request, response, next ) {
 };
 
 // main route for browser UI
-exports.browser = function( request, response ) {
+exports.browser = function( request, response, next ) {
     var query = { group: true };
 
     categoriesView.query(query, function(err, result) {
@@ -94,4 +96,27 @@ exports.browser = function( request, response ) {
 
 	response.render('browser.html', viewOptions);
     });    
+};
+
+// route for loading JSON list of related resources
+exports.related = function( request, response, next ) {
+    var nodeId = request.query.id || null;
+
+    if (nodeId === null) return next(new Error('No node ID declared'));
+ 
+    nodeId = unescape(nodeId);
+
+    var query = {
+	include_docs: true,
+	startkey: [ nodeId, null ],
+	endkey:   [ nodeId, {} ]
+    };
+
+    resourcesView.query(query, function(err, result) {
+	if (err) return next(err);
+
+	var docs = result.rows.map( function(n) { return n.key[1]; } );
+
+	response.json(docs);
+    });
 };

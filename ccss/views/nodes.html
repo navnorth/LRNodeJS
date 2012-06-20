@@ -2,10 +2,17 @@
   {{#nodes}}
     <li class="node">
       {{#hasChildren}}
-        <input type="button" class="expand-node" value=" + " data-id="{{id}}" />
+        <span class="expand-node" data-id="{{id}}" />
       {{/hasChildren}}
-      <b>{{{asn_statementNotation}}}</b> {{{text}}}
-      <div class="children"></div>
+      <b class="statement-notation">{{{asn_statementNotation}}}</b>
+      <span class="text">{{{text}}}</span>
+      <div class="children">
+	<div class="resources" data-id="{{id}}">
+	  <span class="expand-resource" data-id="{{id}}"></span>
+	  <span class="resource-count"></span>
+	  <div class="children"></div>
+	</div>
+      </div>
     </li>
   {{/nodes}}
 </ul>

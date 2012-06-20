@@ -25,3 +25,12 @@ ul {
     width: 768px;
     overflow-y: scroll;
 }
+
+.resources {
+    margin-left: 2em;
+    font-size: 8pt;
+}
+
+.resources .children {
+    margin-left: 3em;
+}

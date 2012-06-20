@@ -46,6 +46,7 @@ app.configure(function(){
 app.get('/standards/:category?', routes.standards);
 app.get('/browser', routes.browser);
 app.post('/nodes/', routes.nodes);
+app.get('/related', routes.related);
 
 // start
 
