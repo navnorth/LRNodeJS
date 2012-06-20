@@ -2,19 +2,42 @@
   <div id="categories">
     <ul>
       {{#categories}}
-        <li class="category"><a href="#" data-category="{{name}}">{{name}}</a></li>
+        <li class="category">
+	  <a href="#" data-category="{{name}}">{{name}}</a>
+	</li>
       {{/categories}}
     </ul>
   </div>
   <div id="view-port">
+    <div id="toolbar">
+      <!-- TODO search box -->
+    </div>
     <div id="crumbs"></div>
     <div id="hierarchy"></div>
   </div>
 </div>    
 
-<script>
+<!-- this drop down is cloned for the bread crumbs -->
+<span id="grade-filter-master" style="display: none">
+  <label>Grade:</label>
+  <select>
+    <option value="K">K</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+    <option value="9">9</option>
+    <option value="10">10</option>
+    <option value="11">11</option>
+    <option value="12">12</option>
+  </select>
+</span>
 
-    // TODO move much of this js to lreg 
+<script>
 
     head.ready(function() {
 	$(document).ready(function () {
@@ -35,26 +58,46 @@
 	    };
 
 	    var standardClick = function (e) {
+		// get standard/category from data
 		var standard = $(e.target).data('standard');
 		var category = $(e.target).data('category')
 		    || $(e.target).closest('.category').data('category');
 
+		// create breadcrumbs
 		var categoryLink = $('<a href="#" data-category="' + category + '">'
 				     + category + '</a>');
-		categoryLink.click(categoryClick);
 		
 		var standardLink = $('<a href="#" data-standard="' + standard + '"'
 				     + ' data-category="' + category + '">'
 				     + standard + '</a>');
-		standardLink.click(standardClick);
 
+		var gradeFilterClone = $('#grade-filter-master').clone();
+		var currentGrade = $.cookie('grade-filter') || 'K';
+
+		gradeFilterClone.removeAttr('id');
+		gradeFilterClone.find('select').val(currentGrade);
+		gradeFilterClone.show();
+
+		// set up events for breadcrumbs
+		categoryLink.click(categoryClick);
+		standardLink.click(standardClick);
+		gradeFilterClone.find('select').change( function (event) {
+		    var grade = $(event.target).val();
+		    $.cookie('grade-filter', grade);
+		    LREG.loadNodes($('#hierarchy'), { standard: escape(standard) });
+		});
+
+		// clear, then add the crumbs to the trail
 		CRUMBS.clear($('#crumbs'));
 		CRUMBS.push($('#crumbs'), categoryLink);
 		CRUMBS.push($('#crumbs'), standardLink);
+		CRUMBS.push($('#crumbs'), gradeFilterClone);
 
+		// finally, load the nodes
 		LREG.loadNodes($('#hierarchy'), { standard: escape(standard) });
 	    };
 
+	    // set up the browser TODO rename LREG -> BROWSER or something
 	    LREG.setCategoryClick(categoryClick);
 	    LREG.setStandardClick(standardClick);
 	    LREG.start($('#hierarchy'));

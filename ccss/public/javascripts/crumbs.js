@@ -1,20 +1,26 @@
 var CRUMBS = (function () {
 
+    // private
+    var isFirstCrumb = true;
+
     // object
     var crumbs = {
 	push: function ($query, c) {
-	    // TODO only append > if not first
-	    var $crumb = $('<span>').addClass('crumb').append(' &gt; ').append(c);
+	    var $crumb = $('<span>').addClass('crumb');
+	    if(!isFirstCrumb) {
+		$crumb.append(' &raquo; ');
+	    }
+	    $crumb.append(c);
+
 	    $query.append($crumb);
-	},
-	pop: function ($query) {
-	    $query.find('.crumb').last().detach();
+
+	    isFirstCrumb = false;
 	},
 	clear: function ($query) {
 	    $query.html('');
+	    isFirstCrumb = true;
 	}
     };
 
     return crumbs;
 })();
-

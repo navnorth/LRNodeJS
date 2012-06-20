@@ -1,7 +1,9 @@
 <ul>
   {{#nodes}}
     <li class="node">
-      {{#hasChildren}}<input type="button" class="expand-node" value=" + " data-id="{{id}}"/>{{/hasChildren}}
+      {{#hasChildren}}
+        <input type="button" class="expand-node" value=" + " data-id="{{id}}" />
+      {{/hasChildren}}
       <b>{{{asn_statementNotation}}}</b> {{{text}}}
       <div class="children"></div>
     </li>

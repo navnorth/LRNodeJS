@@ -1,35 +1,97 @@
 var couchdb = require('couchdb-api');
 
-var server = couchdb.srv('localhost', 5984, false, true); // falses are for useSSH and useCache
-var db     = server.db('ccss_math');
+// couchdb db
+var server       = couchdb.srv('localhost', 5984, false, true);
+var standardsDb  = server.db('standards');
+var categoriesDb = server.db('categories');
 
-exports.nodes = function( request, response ) {
-    // parent is the parent ID of the nodes to load -- null signifies root nodes
-    var parent = request.query["parent"] || null;
-    var query  = { include_docs: true };
-    var map;
+// views
+var nodesView     = standardsDb.ddoc('nodes').view('standard-grade-parent');
+var standardsView = standardsDb.ddoc('nodes').view('standards');
 
-    if(parent) {
-	// have to send string since closure does not survive transmission
-	map = "function(doc) { if( doc.parent === '" + parent + "' ) { emit( doc.id, doc ) } }";
-    }
-    else {
-	map = function(doc) { if( doc.parent === null) { emit( doc.id, doc ) } };
-    } 
+var categoriesView = categoriesDb.ddoc('categories').view('categories');
 
-    db.tempView(map, null, query, function (err, docs) {
-	if (err) { console.log("Error querying couchDB."); throw err; }
+// route to display nodes hierarchically
+//   body.standard is the set the nodes belong to
+//   body.parent is the parent ID of the nodes to load
+//     null signifies to load the root nodes
+//   cookies.grade-filter determines grade of nodes to load
+//     defaults to K/Kindergarten
+exports.nodes = function( request, response, next ) {
+    var standard = request.body.standard           || null;
+    var parent   = request.body.parent             || null;
+    var grade    = request.cookies['grade-filter'] || 'K';
 
-    	var viewOptions = {
+    if (standard === null) return next(new Error('No standard declared'));
+
+    standard = unescape(standard);
+    if( parent ) parent = unescape(parent);
+
+    var query = {
+	include_docs: true,
+	startkey: [ standard, grade, parent ],
+	endkey:   [ standard, grade, parent ]
+    };
+
+    nodesView.query(query, function(err, result) {
+	if (err) return next(err);
+
+	var viewOptions = {
+	    layout: false,
 	    locals: {
-		nodes: docs.rows.map( function(n) { return n.value } )
+		nodes: result.rows.map( function(n) {
+		    return n.value;
+		})
 	    }
 	};
 
-    	response.render('nodes.html', viewOptions);
+	response.render('nodes.html', viewOptions);
     });
 };
 
-exports.index = function( request, response ) {
-    response.render('index.html');
+// route for displaying categorized standards
+//   pass params.category to filter by category
+exports.standards = function( request, response, next ) {
+    var category = request.params.category || null; // optional
+
+    var query = { group: true };
+
+    if (category !== null) {
+	query.startkey = category;
+	query.endkey = category;
+    }
+
+    categoriesView.query(query, function(err, result) {
+	if (err) return next(err);
+
+	var viewOptions = {
+	    layout: false,
+	    locals: {
+		categories: result.rows.map( function(n) {
+		    return { name: n.key, standards: n.value };
+		})
+	    }
+	};
+
+	response.render('standards.html', viewOptions);
+    });
+};
+
+// main route for browser UI
+exports.browser = function( request, response ) {
+    var query = { group: true };
+
+    categoriesView.query(query, function(err, result) {
+	if (err) return next(err);
+
+	var viewOptions = {
+	    locals: {
+		categories: result.rows.map( function(n) {
+		    return { name: n.key, standards: n.value };
+		})
+	    }
+	};
+
+	response.render('browser.html', viewOptions);
+    });    
 };

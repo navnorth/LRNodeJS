@@ -1,0 +1,27 @@
+ul {
+    list-style-type: none;
+}
+
+#browser {
+    background-color: #999;
+    height: 768px;
+}
+
+#browser #categories {
+    background-color: #fff;
+    float: left;
+    width: 128px;
+    margin: 8px;
+}
+
+#browser #view-port {
+    background-color: #fff;
+    float: left;
+    margin: 8px;
+}
+
+#hierarchy {
+    height: 512px;
+    width: 768px;
+    overflow-y: scroll;
+}

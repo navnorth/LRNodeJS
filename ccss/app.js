@@ -32,9 +32,10 @@ var app = module.exports = express.createServer();
 app.configure(function(){
     app.set('views', __dirname + '/views');
     app.set('view engine', 'mustache');
-    app.set("view options", { layout: false });
-    app.register(".html", tmpl);
+    app.set('view options', { layout: true });
+    app.register('.html', tmpl);
     app.use(express.bodyParser());
+    app.use(express.cookieParser());
     app.use(express.methodOverride());
     app.use(app.router);
     app.use(express.static(__dirname + '/public'));
@@ -42,8 +43,9 @@ app.configure(function(){
 
 // routes
 
-app.get('/', routes.index);
-app.get('/nodes', routes.nodes);
+app.get('/standards/:category?', routes.standards);
+app.get('/browser', routes.browser);
+app.post('/nodes/', routes.nodes);
 
 // start
 
@@ -53,7 +55,7 @@ app.configure('development', function(){
 });
 
 app.configure('production', function(){
-    app.use(express.errorHandler()); 
+    app.use(express.errorHandler());
     app.listen(8012);
 });
 

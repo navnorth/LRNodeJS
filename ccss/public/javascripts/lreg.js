@@ -23,11 +23,6 @@ var LREG = (function () {
 	    standardClick = handler;
 	},
 	loadNodes: function (query, data) {
-	    console.log('query: ');
-	    console.log(query);
-	    console.log('data:  ');
-	    console.log(data);
-
 	    var nodesUrl = '/nodes/';
 
 	    query.load(nodesUrl, data, function () {
