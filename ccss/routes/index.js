@@ -97,26 +97,3 @@ exports.browser = function( request, response, next ) {
 	response.render('browser.html', viewOptions);
     });    
 };
-
-// route for loading JSON list of related resources
-exports.related = function( request, response, next ) {
-    var nodeId = request.query.id || null;
-
-    if (nodeId === null) return next(new Error('No node ID declared'));
- 
-    nodeId = unescape(nodeId);
-
-    var query = {
-	include_docs: true,
-	startkey: [ nodeId, null ],
-	endkey:   [ nodeId, {} ]
-    };
-
-    resourcesView.query(query, function(err, result) {
-	if (err) return next(err);
-
-	var docs = result.rows.map( function(n) { return n.key[1]; } );
-
-	response.json(docs);
-    });
-};

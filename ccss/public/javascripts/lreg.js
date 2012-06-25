@@ -4,6 +4,8 @@ var LREG = (function () {
     var categoryClick = function () {};
     var standardClick = function () {};
 
+    var resourceServiceUrl = 'http://testcadrelr.e-cdl.org/extract/standards-alignment-related/resource-by-discriminator'; // TODO allow to set or put in config
+
     // private methods
     var createExpandos = function ($selector, action) {
 	$selector.each( function(i,element) {
@@ -60,30 +62,32 @@ var LREG = (function () {
 		var $resourceDiv = $(e);
 		var id = $resourceDiv.data('id');
 
-		// check if there are any resources
-		$.ajax('/related/', {
-		    data: {id: id},
+		$.ajax(resourceServiceUrl, {
+		    data: {discriminator: id},
 		    success: function (resources) {
+			var count = resources.documents.length;
+
 			// remove element if no resources
-			if (resources.length === 0) {
+			if (count === 0) {
 			    $resourceDiv.remove();
 			    return;
 			}
 			
 			// get resource/s depending on how many
-			var pluralText = resources.length === 1 ? 'resource' : 'resources';
+			var pluralText = count === 1 ? 'resource' : 'resources';
 			
 			$resourceDiv.children('.children').hide();
 			
 			// load resources and populate data / create expandos
 			$resourceDiv.find('.resource-count')
-			    .text( resources.length + ' ' + pluralText );
+			    .text( count + ' ' + pluralText );
 			
-			$.each( resources, function(j, resource) {
+			$.each( resources.documents, function(j, doc) {
+			    var link = doc.result_data.resource;
 			    var p = $('<p>');
 			    var a = $('<a>');
-			    a.attr('href', resource);
-			    a.text(resource);
+			    a.attr('href', link);
+			    a.text(link);
 			    p.append(a);
 			    $resourceDiv.find('.children').append(p);
 			});
@@ -96,7 +100,7 @@ var LREG = (function () {
 			    }
 			);
 		    }
-		});
+		}); 
 	    });
 	},
 	loadNodes: function ($query, data) {
