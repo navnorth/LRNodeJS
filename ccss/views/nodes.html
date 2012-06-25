@@ -6,12 +6,12 @@
       {{/hasChildren}}
       <b class="statement-notation">{{{asn_statementNotation}}}</b>
       <span class="text">{{{text}}}</span>
+      <div class="resources" data-id="{{id}}">
+	<span class="expand-resource" data-id="{{id}}"></span>
+	<span class="resource-count"></span>
+	<div class="children"></div>
+      </div>
       <div class="children">
-	<div class="resources" data-id="{{id}}">
-	  <span class="expand-resource" data-id="{{id}}"></span>
-	  <span class="resource-count"></span>
-	  <div class="children"></div>
-	</div>
       </div>
     </li>
   {{/nodes}}

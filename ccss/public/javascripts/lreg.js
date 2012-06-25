@@ -55,11 +55,57 @@ var LREG = (function () {
 	setStandardClick: function (handler) {
 	    standardClick = handler;
 	},
+	loadResources: function ($div, callback) {
+	    $div.find('.resources').each( function (i, e) {
+		var $resourceDiv = $(e);
+		var id = $resourceDiv.data('id');
+
+		// check if there are any resources
+		$.ajax('/related/', {
+		    data: {id: id},
+		    success: function (resources) {
+			// remove element if no resources
+			if (resources.length === 0) {
+			    $resourceDiv.remove();
+			    return;
+			}
+			
+			// get resource/s depending on how many
+			var pluralText = resources.length === 1 ? 'resource' : 'resources';
+			
+			$resourceDiv.children('.children').hide();
+			
+			// load resources and populate data / create expandos
+			$resourceDiv.find('.resource-count')
+			    .text( resources.length + ' ' + pluralText );
+			
+			$.each( resources, function(j, resource) {
+			    var p = $('<p>');
+			    var a = $('<a>');
+			    a.attr('href', resource);
+			    a.text(resource);
+			    p.append(a);
+			    $resourceDiv.find('.children').append(p);
+			});
+			
+			createExpandos(
+			    $resourceDiv.find('.expand-resource'),
+			    function (event) {
+				// initial click -> show the resources
+				$resourceDiv.children('.children').show();
+			    }
+			);
+		    }
+		});
+	    });
+	},
 	loadNodes: function ($query, data) {
 	    var nodesUrl = '/nodes/';
 	    var $div = $('<div>');
 
 	    $div.load(nodesUrl, data, function () {
+		lreg.loadResources( $div );
+
 		createExpandos($div.find('.expand-node'), function (event) {
 		    var children = $(event.target).parent().children('.children');
 		    var parent   = $(event.target).data('id');
@@ -69,51 +115,10 @@ var LREG = (function () {
 			parent: parent
 		    };
 
-		    var $resourcesDiv = children.children('.resources');
-		    var id = $resourcesDiv.data('id');
-
-		    // check if there are any resources
-		    $.ajax('/related/', {
-			data: {id: id},
-			success: function (resources) {
-			    // remove element if no resources
-			    if (resources.length === 0) {
-				$resourcesDiv.remove();
-				return;
-			    }
-
-			    // get resource/s depending on how many
-			    var pluralText = resources.length === 1 ? 'resource' : 'resources';
-
-			    $resourcesDiv.children('.children').hide();
-			    
-			    // load resources and populate data / create expandos
-			    $resourcesDiv.find('.resource-count')
-				.text( resources.length + ' ' + pluralText );
-			    
-			    $.each( resources, function(j, resource) {
-				var p = $('<p>');
-				var a = $('<a>');
-				a.attr('href', resource);
-				a.text(resource);
-				p.append(a);
-				$resourcesDiv.find('.children').append(p);
-			    });
-			    
-			    createExpandos(
-				$resourcesDiv.find('.expand-resource'),
-				function (event) {
-				    // initial click -> show the resources
-				    $(event.target).parent().children('.children').show();
-				}
-			    );
-			}
-		    });
-
 		    lreg.loadNodes(children, childData);
 		});
 		
-		$query.append($div);
+		$query.html($div);
 	    });
 	}
     };
