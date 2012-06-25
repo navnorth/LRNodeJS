@@ -12,23 +12,23 @@ var LREG = (function () {
 
 	    var id = $(element).data('id');
 
-	    var button = $('<input type="button">');
+	    var button = $('<a>');
 	    button.addClass('expando');
-	    button.val(' + ');
+	    button.text('[ + ]');
 	    button.data('id', id);
 
 	    button.click(function (event) {
 		action(event);
 		
-		button.val(' - ');
+		button.text('[ - ]');
 		button.off('click'); // remove old handler
 		button.click(function(event) {
 		    // no need to load twice so just switch symbol and toggle
-		    if( button.val() === ' + ' ) {
-			button.val(' - ');
+		    if( button.text() === '[ + ]' ) {
+			button.text('[ - ]');
 		    }
 		    else {
-			button.val(' + ');
+			button.text('[ + ]');
 		    }
 		    
 		    button.parent().children('.children').toggle();
