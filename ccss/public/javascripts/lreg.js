@@ -62,6 +62,9 @@ var LREG = (function () {
 		var $resourceDiv = $(e);
 		var id = $resourceDiv.data('id');
 
+		$resourceDiv.find('.resource-count')
+		    .text( 'loading...' );
+
 		$.ajax(resourceServiceUrl, {
 		    data: {discriminator: id},
 		    success: function (resources) {
@@ -69,7 +72,8 @@ var LREG = (function () {
 
 			// remove element if no resources
 			if (count === 0) {
-			    $resourceDiv.remove();
+			    $resourceDiv.find('.resource-count')
+				.text( 'no resources found' );
 			    return;
 			}
 			
