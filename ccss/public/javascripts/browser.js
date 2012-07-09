@@ -1,12 +1,39 @@
 var BROWSER = (function () {
 
     // private fields
-    var categoryClick = function () {};
-    var standardClick = function () {};
 
     var resourceServiceUrl = 'http://localhost/extract/standards-alignment-related/resource-by-discriminator'; // default value
 
+    var $screen;
+
     // private methods
+
+    var categoryClick = function (event) {
+	var category = $(event.target).data('category');
+	updateHashLocation(category);
+	return false;
+    };
+
+    var standardClick = function (event) {
+	var standard = $(event.target).data('standard');
+	var category = $(event.target).data('category')
+	    || $(event.target).closest('.category').data('category');
+	updateHashLocation(category, standard);
+	return false;
+    };
+
+    var gradeChange = function (event) {
+	var grade = $(event.target).val();
+	var standard = $(event.target).data('standard');
+	var category = $(event.target).data('category')
+	    || $(event.target).closest('.category').data('category');
+
+	$.cookie('grade-filter', grade);
+
+	updateHashLocation(category, standard, grade);
+	return false;
+    };
+
     var createExpandos = function ($selector, action) {
 	$selector.each( function(i,element) {
 
@@ -39,26 +66,105 @@ var BROWSER = (function () {
 	});
     };
 
+    var updateHashLocation = function (category, standard, grade) {
+	var hashParts = [];
+
+	if (category !== undefined) hashParts.push(category);
+	if (standard !== undefined) hashParts.push(standard);
+	if (grade    !== undefined) hashParts.push(grade);
+
+	location.hash = hashParts.join('/');
+    };
+
+    var createCategoryLink = function (category) {
+	var link = $('<a/>').addClass('category-link')
+	    .data('category', category)
+	    .text(category)
+	    .attr('href', '#');
+
+	return link;
+    };
+
+    var createStandardLink = function (category, standard) {
+	var link = $('<a/>').addClass('standard-link')
+	    .data('category', category)
+	    .data('standard', standard)
+	    .text(standard)
+	    .attr('href', '#');
+
+	return link;
+    };
+
+    var createGradeLink = function (category, standard) {
+	var gradeFilterClone = $('#grade-filter-master').clone();
+	var grade = $.cookie('grade-filter') || 'K';
+
+	var link = gradeFilterClone.removeAttr('id');
+
+	link.find('.grade-link').data('category', category)
+	link.find('.grade-link').data('standard', standard)
+	link.find('.grade-link').val(grade)
+	link.show();
+
+	return link;
+    };
+
     // singleton
     var browser = {
 	setResourceServiceUrl: function (url) {
 	    resourceServiceUrl = url;
 	},
-	start: function ($screen) { // $screen is where stuff will be loaded
+	start: function ($screenIn) { // $screen is where stuff will be loaded
+	    $screen = $screenIn;
+
+	    // set up category, standard, and grade events
+	    $(document).on( 'click',  '.category-link', categoryClick );
+	    $(document).on( 'click',  '.standard-link', standardClick );
+	    $(document).on( 'change', '.grade-link',    gradeChange );
+
 	    // load the list of all categories and standards
-	    $screen.load('/standards/', function () {
-		// set up category clicks
-		$('li.category a').click( categoryClick );
-		
-		// set up standard set clicks
-		$('li.standard a').click( standardClick );
+	    $screen.load('/standards/');
+	    
+	    $(window).hashchange( function () {
+		var hashParts = unescape(location.hash).split('/');
+
+		var category = hashParts[0];
+		var standard = hashParts[1];
+		var grade    = hashParts[2];
+
+		// remove leading #
+		if (category !== undefined) category = category.substring(1);
+
+		// set grade in case of bookmark
+		if (grade !== undefined) $.cookie('grade-filter', grade);
+
+		// load the display
+		var categoryUrl = '/standards/' + escape(category);
+
+		if (category !== undefined && standard === undefined) {
+		    $screen.load(categoryUrl, function () {
+			CRUMBS.clear($('#crumbs'));
+			CRUMBS.push($('#crumbs'), createCategoryLink(category));
+		    });
+		}
+		else {
+		    // clear, then add the crumbs to the trail
+		    CRUMBS.clear($('#crumbs'));
+		    CRUMBS.push($('#crumbs'), createCategoryLink(category));
+		    CRUMBS.push($('#crumbs'), createStandardLink(category, standard));
+		    CRUMBS.push($('#crumbs'), createGradeLink(category, standard, grade));
+
+		    // finally, load the nodes
+		    $screen.html('');
+		    browser.loadNodes($screen, { standard: escape(standard) });
+		}
+
+		console.log(hashParts);
 	    });
-	},
-	setCategoryClick: function(handler) {
-	    categoryClick = handler;
-	},
-	setStandardClick: function (handler) {
-	    standardClick = handler;
+
+	    // fire the hashchange event in case bookmarked hash supplied
+	    $(window).hashchange();
+
 	},
 	loadResources: function ($div, callback) {
 	    $div.find('.resources').each( function (i, e) {
