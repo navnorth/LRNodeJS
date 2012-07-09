@@ -1,4 +1,5 @@
 var couchdb = require('couchdb-api');
+var config  = require('config');
 
 // couchdb db
 var server       = couchdb.srv('localhost', 5984, false, true);
@@ -88,6 +89,7 @@ exports.browser = function( request, response, next ) {
 
 	var viewOptions = {
 	    locals: {
+		resourceServiceUrl: config.resourceService.url,
 		categories: result.rows.map( function(n) {
 		    return { name: n.key, standards: n.value };
 		})

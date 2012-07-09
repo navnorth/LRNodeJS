@@ -84,7 +84,7 @@
 		gradeFilterClone.find('select').change( function (event) {
 		    var grade = $(event.target).val();
 		    $.cookie('grade-filter', grade);
-		    LREG.loadNodes($('#hierarchy'), { standard: escape(standard) });
+		    BROWSER.loadNodes($('#hierarchy'), { standard: escape(standard) });
 		});
 
 		// clear, then add the crumbs to the trail
@@ -95,13 +95,14 @@
 
 		// finally, load the nodes
 		$('#hierarchy').html('');
-		LREG.loadNodes($('#hierarchy'), { standard: escape(standard) });
+		BROWSER.loadNodes($('#hierarchy'), { standard: escape(standard) });
 	    };
 
-	    // set up the browser TODO rename LREG -> BROWSER or something
-	    LREG.setCategoryClick(categoryClick);
-	    LREG.setStandardClick(standardClick);
-	    LREG.start($('#hierarchy'));
+	    // set up the browser
+	    BROWSER.setResourceServiceUrl("{{resourceServiceUrl}}");
+	    BROWSER.setCategoryClick(categoryClick);
+	    BROWSER.setStandardClick(standardClick);
+	    BROWSER.start($('#hierarchy'));
 	});
     });
 </script>

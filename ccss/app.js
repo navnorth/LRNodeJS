@@ -1,5 +1,6 @@
-var express = require('express');
+var express  = require('express');
 var mustache = require('mustache');
+var config   = require('config');
 
 var tmpl = { // template functions to render with mustache
     compile: function (source, options) {
