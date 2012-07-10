@@ -34,3 +34,27 @@ ul {
 .resources .children {
     margin-left: 3em;
 }
+
+/* SimpleModal styles */
+#simplemodal-overlay {
+    background: #000;
+}
+
+#simplemodal-container {
+    background: #fff;
+    padding: 1em;
+    border: 2px solid #000;
+    border-radis: 4px;
+}
+
+#simplemodal-container a.modalCloseImg {
+    background:url(/images/x.png) no-repeat; /* adjust url as required */
+    width:25px;
+    height:29px;
+    display:inline;
+    z-index:3200;
+    position:absolute;
+    top:-15px;
+    right:-18px;
+    cursor:pointer;
+}

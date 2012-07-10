@@ -39,17 +39,13 @@ var BROWSER = (function () {
 
 	    var id = $(element).data('id');
 
-	    var button = $('<a>');
-	    button.addClass('expando');
-	    button.text('[ + ]');
-	    button.data('id', id);
+	    var button = $('<a>').addClass('expando').text('[ + ]').data('id', id);
 
 	    button.click(function (event) {
 		action(event);
 		
-		button.text('[ - ]');
-		button.off('click'); // remove old handler
-		button.click(function(event) {
+		// remove old handler and toggle click
+		button.text('[ - ]').off('click').click(function(event) {
 		    // no need to load twice so just switch symbol and toggle
 		    if( button.text() === '[ + ]' ) {
 			button.text('[ - ]');
@@ -66,12 +62,16 @@ var BROWSER = (function () {
 	});
     };
 
-    var updateHashLocation = function (category, standard, grade) {
+    var updateHashLocation = function (category, standard, grade, nodes) {
 	var hashParts = [];
 
 	if (category !== undefined) hashParts.push(category);
 	if (standard !== undefined) hashParts.push(standard);
 	if (grade    !== undefined) hashParts.push(grade);
+
+	if (nodes !== undefined) {
+	    hashParts = hashParts.concat(nodes);
+	}
 
 	location.hash = hashParts.join('/');
     };
@@ -128,9 +128,10 @@ var BROWSER = (function () {
 	    $(window).hashchange( function () {
 		var hashParts = unescape(location.hash).split('/');
 
-		var category = hashParts[0];
-		var standard = hashParts[1];
-		var grade    = hashParts[2];
+		var category = hashParts.shift();
+		var standard = hashParts.shift();
+		var grade    = hashParts.shift();
+		var nodes    = hashParts; // nodes are only left over
 
 		// remove leading #
 		if (category !== undefined) category = category.substring(1);
@@ -157,9 +158,14 @@ var BROWSER = (function () {
 		    // finally, load the nodes
 		    $screen.html('');
 		    browser.loadNodes($screen, { standard: escape(standard) });
+		    
+		    if (nodes.length > 0) {
+			nodes.forEach( function (node) {
+			    console.log(node);
+			    // TODO simulate click / load ndoes with callback
+			});
+		    }
 		}
-
-		console.log(hashParts);
 	    });
 
 	    // fire the hashchange event in case bookmarked hash supplied
@@ -168,50 +174,49 @@ var BROWSER = (function () {
 	},
 	loadResources: function ($div, callback) {
 	    $div.find('.resources').each( function (i, e) {
-		var $resourceDiv = $(e);
-		var id = $resourceDiv.data('id');
+		var $resourceDiv  = $(e);
+		var $resourceLink = $resourceDiv.find('.resource-count');
 
-		$resourceDiv.find('.resource-count')
-		    .text( 'loading...' );
+		var id = $resourceLink.data('id');
+
+		$resourceLink.text( 'loading...' );
 
 		$.ajax(resourceServiceUrl, {
 		    data: {discriminator: id},
+//		    crossDomain: true,
 		    success: function (resources) {
 			var count = resources.documents.length;
 
 			// remove element if no resources
 			if (count === 0) {
-			    $resourceDiv.find('.resource-count')
-				.text( 'no resources found' );
+			    $resourceLink.text( 'no resources found' );
 			    return;
 			}
 			
 			// get resource/s depending on how many
 			var pluralText = count === 1 ? 'resource' : 'resources';
 			
-			$resourceDiv.children('.children').hide();
-			
-			// load resources and populate data / create expandos
-			$resourceDiv.find('.resource-count')
-			    .text( count + ' ' + pluralText );
-			
+			var div = $('<div/>');
+			div.append($('<h2 />').text('Resources'));
+
 			$.each( resources.documents, function(j, doc) {
 			    var link = doc.result_data.resource;
-			    var p = $('<p>');
-			    var a = $('<a>');
-			    a.attr('href', link);
-			    a.text(link);
+			    var a = $('<a/>').attr('href', link).text(link)
+				.attr('target', '_blank');
+			    var p = $('<p/>');
 			    p.append(a);
-			    $resourceDiv.find('.children').append(p);
+			    div.append(p);
 			});
-			
-			createExpandos(
-			    $resourceDiv.find('.expand-resource'),
-			    function (event) {
-				// initial click -> show the resources
-				$resourceDiv.children('.children').show();
-			    }
-			);
+
+			var $newResourceLink = $('<a/>')
+			    .attr('href', '#').text( count + ' ' + pluralText );
+
+			$newResourceLink.click( function (event) {
+			    $.modal(div);
+			    return false;
+			});
+
+			$resourceLink.replaceWith($newResourceLink);
 		    }
 		}); 
 	    });
