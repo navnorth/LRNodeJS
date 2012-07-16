@@ -6,71 +6,84 @@ var BROWSER = (function () {
 
     var $screen;
 
-    // private methods
+    var state = {
+	catgory: undefined,
+	standard: undefined,
+	grade: $.cookie('grade-filter') || 'K',
+	nodes: []
+    };
+
+    // private event handlers
 
     var categoryClick = function (event) {
-	var category = $(event.target).data('category');
-	updateHashLocation(category);
+	state.category = $(event.target).data('category');
+	updateHashLocation();
 	return false;
     };
 
     var standardClick = function (event) {
-	var standard = $(event.target).data('standard');
-	var category = $(event.target).data('category')
+	state.standard = $(event.target).data('standard');
+	state.category = $(event.target).data('category')
 	    || $(event.target).closest('.category').data('category');
-	updateHashLocation(category, standard);
+	updateHashLocation();
 	return false;
     };
 
     var gradeChange = function (event) {
-	var grade = $(event.target).val();
-	var standard = $(event.target).data('standard');
-	var category = $(event.target).data('category')
+	var target = $(event.target);
+	state.standard = $target.data('standard');
+	state.category = $target.data('category')
 	    || $(event.target).closest('.category').data('category');
+	state.grade = $target.val();
 
 	$.cookie('grade-filter', grade);
 
-	updateHashLocation(category, standard, grade);
+	updateHashLocation();
 	return false;
     };
 
-    var createExpandos = function ($selector, action) {
-	$selector.each( function(i,element) {
+    var childClick = function (event) {
+	var $target    = $(event.target);
+	var $ancestors = $target.parents('.node');
+	var $container = $target.closest('.node');
+	var parentId   = $container.data('id');
+	var newNodes   = [];
+	
+	// handle toggle and button
+	if( $target.text() === '[ + ]' ) $target.text('[ - ]');
+	else $target.text('[ + ]');
+	    
+	$container.children('.children').toggle();
 
-	    var id = $(element).data('id');
-
-	    var button = $('<a>').addClass('expando').text('[ + ]').data('id', id);
-
-	    button.click(function (event) {
-		action(event);
-		
-		// remove old handler and toggle click
-		button.text('[ - ]').off('click').click(function(event) {
-		    // no need to load twice so just switch symbol and toggle
-		    if( button.text() === '[ + ]' ) {
-			button.text('[ - ]');
-		    }
-		    else {
-			button.text('[ + ]');
-		    }
-		    
-		    button.parent().children('.children').toggle();
-		});
-	    });
-
-	    $(element).replaceWith(button);
+	// walk up the DOM and find IDs of all nodes in hierarchy
+	$ancestors.each( function (i, e) {
+	    newNodes.push($(e).data('id'));
 	});
+	
+	console.log(newNodes);
+
+	state.nodes = newNodes;
+	updateHashLocation();
+
+	return false;
     };
 
-    var updateHashLocation = function (category, standard, grade, nodes) {
+    // private methods
+
+    var updateHashLocation = function () {
 	var hashParts = [];
 
-	if (category !== undefined) hashParts.push(category);
-	if (standard !== undefined) hashParts.push(standard);
-	if (grade    !== undefined) hashParts.push(grade);
-
-	if (nodes !== undefined) {
-	    hashParts = hashParts.concat(nodes);
+	if (state.category) {
+	    hashParts.push(state.category);
+	    if (state.standard) {
+		hashParts.push(state.standard);
+		if (state.grade) {
+		    hashParts.push(state.grade);
+		    if (state.nodes) {
+			hashParts = hashParts.concat(state.nodes);
+		    }
+		}
+	    }
 	}
 
 	location.hash = hashParts.join('/');
@@ -101,14 +114,73 @@ var BROWSER = (function () {
 
 	var link = gradeFilterClone.removeAttr('id');
 
-	link.find('.grade-link').data('category', category)
-	link.find('.grade-link').data('standard', standard)
-	link.find('.grade-link').val(grade)
+	link.find('.grade-link').data('category', category);
+	link.find('.grade-link').data('standard', standard);
+	link.find('.grade-link').val(grade);
 	link.show();
 
 	return link;
     };
 
+    var loadResources = function ($div, callback) {
+	$div.find('.resources').each( function (i, e) {
+	    var $resourceDiv  = $(e);
+	    var $resourceLink = $resourceDiv.find('.resource-count');
+	    
+	    var id = $resourceLink.data('id');
+	    
+	    $resourceLink.text( 'loading...' );
+	    
+	    $.ajax(resourceServiceUrl, {
+		data: {discriminator: id},
+		success: function (resources) {
+		    var count = resources.documents.length;
+		    
+		    // remove element if no resources
+		    if (count === 0) {
+			$resourceLink.text( 'no resources found' );
+			return;
+		    }
+		    
+		    // get resource/s depending on how many
+		    var pluralText = count === 1 ? 'resource' : 'resources';
+		    
+		    var div = $('<div/>');
+		    $('<h2 />').text('Resources').appendTo(div);
+		    
+		    $.each( resources.documents, function(i, doc) {
+			var link = doc.result_data.resource;
+			var a = $('<a/>').attr('href', link).text(link)
+			    .attr('target', '_blank');
+			var p = $('<p/>');
+			p.append(a);
+			div.append(p);
+		    });
+		    
+		    var $newResourceLink = $('<a/>')
+			.attr('href', '#').text( count + ' ' + pluralText );
+		    
+		    $newResourceLink.click( function (event) {
+			$.modal(div);
+			return false;
+		    });
+		    
+		    $resourceLink.replaceWith($newResourceLink);
+		}
+	    }); 
+	});
+    };
+
+    var loadNodes = function ($query, data, callback) {
+	var nodesUrl = '/nodes/';
+	var $div = $('<div/>').addClass('children');
+	$div.load(nodesUrl, data, function () {
+	    loadResources($div);
+	    $query.append($div);
+	    if (callback) callback();
+	});
+    };
+	       
     // singleton
     var browser = {
 	setResourceServiceUrl: function (url) {
@@ -121,6 +193,7 @@ var BROWSER = (function () {
 	    $(document).on( 'click',  '.category-link', categoryClick );
 	    $(document).on( 'click',  '.standard-link', standardClick );
 	    $(document).on( 'change', '.grade-link',    gradeChange );
+	    $(document).on( 'click',  '.expand-node',   childClick );
 
 	    // load the list of all categories and standards
 	    $screen.load('/standards/');
@@ -131,18 +204,43 @@ var BROWSER = (function () {
 		var category = hashParts.shift();
 		var standard = hashParts.shift();
 		var grade    = hashParts.shift();
-		var nodes    = hashParts; // nodes are only left over
+		var nodes    = hashParts; // only nodes are left over, if any
 
 		// remove leading #
-		if (category !== undefined) category = category.substring(1);
+		if (category) category = category.substring(1);
 
 		// set grade in case of bookmark
-		if (grade !== undefined) $.cookie('grade-filter', grade);
+		if (grade) $.cookie('grade-filter', grade);
+
+		var categoryUrl = '/standards/';
+
+		if (category) categoryUrl += escape(category);
+
+		var childrenToLoad = [];
+		var parent;
+
+		// returns function to descend into the node path provided
+		// moves to next node after each is finished loading
+		var recursiveDescent = function recursiveDescent (nodes) {
+		    return function () {
+			var node      = nodes.shift();
+			console.log('loading: ' + node);
+			var $target   = $("[data-id='" + node + "']");
+			var $children = $target.parent().children('.children');
+			var parent    = { parent: parentId };
+			if(nodes.length > 1) {
+			    loadNodes($children, parent, recursiveDescent(nodes));
+			}
+		    };
+	        };
 
 		// load the display
-		var categoryUrl = '/standards/' + escape(category);
-
-		if (category !== undefined && standard === undefined) {
+		if (!category) {
+		    $screen.load(categoryUrl, function () {
+			CRUMBS.clear($('#crumbs'));
+		    });
+		}
+		else if (!standard) {
 		    $screen.load(categoryUrl, function () {
 			CRUMBS.clear($('#crumbs'));
 			CRUMBS.push($('#crumbs'), createCategoryLink(category));
@@ -155,93 +253,29 @@ var BROWSER = (function () {
 		    CRUMBS.push($('#crumbs'), createStandardLink(category, standard));
 		    CRUMBS.push($('#crumbs'), createGradeLink(category, standard, grade));
 
-		    // finally, load the nodes
-		    $screen.html('');
-		    browser.loadNodes($screen, { standard: escape(standard) });
-		    
-		    if (nodes.length > 0) {
-			nodes.forEach( function (node) {
-			    console.log(node);
-			    // TODO simulate click / load ndoes with callback
-			});
+		    // find out what part of the node tree needs to be loaded
+		    nodes.forEach( function (node) {
+			var $target = $("[data-id='" + node + "']").find('.children');
+			var childrenArePresent = $target ? true : false;
+			if (!childrenArePresent) {
+			    childrenToLoad.push(node);
+			}
+		    });
+
+		    if (childrenToLoad.length > 0) {
+			parent = { parent: childrenToLoad.shift() };
+			loadNodes($screen, parent, recursiveDescent(childrenToLoad));
+		    }
+		    else {
+			parent = { parent: standardId };
+			$screen.html('');
+			loadNodes($screen, parent);
 		    }
 		}
 	    });
 
 	    // fire the hashchange event in case bookmarked hash supplied
 	    $(window).hashchange();
-
-	},
-	loadResources: function ($div, callback) {
-	    $div.find('.resources').each( function (i, e) {
-		var $resourceDiv  = $(e);
-		var $resourceLink = $resourceDiv.find('.resource-count');
-
-		var id = $resourceLink.data('id');
-
-		$resourceLink.text( 'loading...' );
-
-		$.ajax(resourceServiceUrl, {
-		    data: {discriminator: id},
-//		    crossDomain: true,
-		    success: function (resources) {
-			var count = resources.documents.length;
-
-			// remove element if no resources
-			if (count === 0) {
-			    $resourceLink.text( 'no resources found' );
-			    return;
-			}
-			
-			// get resource/s depending on how many
-			var pluralText = count === 1 ? 'resource' : 'resources';
-			
-			var div = $('<div/>');
-			div.append($('<h2 />').text('Resources'));
-
-			$.each( resources.documents, function(j, doc) {
-			    var link = doc.result_data.resource;
-			    var a = $('<a/>').attr('href', link).text(link)
-				.attr('target', '_blank');
-			    var p = $('<p/>');
-			    p.append(a);
-			    div.append(p);
-			});
-
-			var $newResourceLink = $('<a/>')
-			    .attr('href', '#').text( count + ' ' + pluralText );
-
-			$newResourceLink.click( function (event) {
-			    $.modal(div);
-			    return false;
-			});
-
-			$resourceLink.replaceWith($newResourceLink);
-		    }
-		}); 
-	    });
-	},
-	loadNodes: function ($query, data) {
-	    var nodesUrl = '/nodes/';
-	    var $div = $('<div>');
-
-	    $div.load(nodesUrl, data, function () {
-		browser.loadResources( $div );
-
-		createExpandos($div.find('.expand-node'), function (event) {
-		    var children = $(event.target).parent().children('.children');
-		    var parent   = $(event.target).data('id');
-
-		    var childData = {
-			standard: data.standard,
-			parent: parent
-		    };
-
-		    browser.loadNodes(children, childData);
-		});
-		
-		$query.html($div);
-	    });
 	}
     };
 

@@ -1,15 +1,13 @@
 <ul>
   {{#nodes}}
-    <li class="node">
+    <li class="node" data-id="{{_id}}">
       {{#hasChildren}}
-        <span class="expand-node" data-id="{{id}}" />
+        <a href="#" class="expand-node">[ + ]</a>
       {{/hasChildren}}
       <b class="statement-notation">{{{asn_statementNotation}}}</b>
       <span class="text">{{{text}}}</span>
       <div class="resources">
 	<span class="resource-count" data-id="{{asn_identifier}}"></span>
-      </div>
-      <div class="children">
       </div>
     </li>
   {{/nodes}}

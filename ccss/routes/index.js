@@ -4,38 +4,29 @@ var config  = require('config');
 // couchdb db
 var server       = couchdb.srv('localhost', 5984, false, true);
 var standardsDb  = server.db('standards');
-var categoriesDb = server.db('categories');
-var resourcesDb  = server.db('resource_data');
 
 // views
-var nodesView     = standardsDb.ddoc('nodes').view('standard-grade-parent');
-var standardsView = standardsDb.ddoc('nodes').view('standards');
-
-var categoriesView = categoriesDb.ddoc('categories').view('categories');
-
-var resourcesView = resourcesDb.ddoc('standards-alignment-related')
-                   .view('resource-by-discriminator');
+var nodesView      = standardsDb.ddoc('nodes').view('parent-grade');
+var categoriesView = standardsDb.ddoc('nodes').view('categories');
 
 // route to display nodes hierarchically
 //   body.standard is the set the nodes belong to
 //   body.parent is the parent ID of the nodes to load
-//     null signifies to load the root nodes
 //   cookies.grade-filter determines grade of nodes to load
 //     defaults to K/Kindergarten
 exports.nodes = function( request, response, next ) {
-    var standard = request.body.standard           || null;
     var parent   = request.body.parent             || null;
     var grade    = request.cookies['grade-filter'] || 'K';
 
-    if (standard === null) return next(new Error('No standard declared'));
+    if (parent === null) return next(new Error('No parent given'));
 
-    standard = unescape(standard);
-    if( parent ) parent = unescape(parent);
-
+    parent = unescape(parent);
+    console.log('parent: ' + parent);
+    
     var query = {
 	include_docs: true,
-	startkey: [ standard, grade, parent ],
-	endkey:   [ standard, grade, parent ]
+	startkey: [ parent, grade ],
+	endkey:   [ parent, grade ]
     };
 
     nodesView.query(query, function(err, result) {
@@ -71,6 +62,7 @@ exports.standards = function( request, response, next ) {
 	    layout: false,
 	    locals: {
 		categories: result.rows.map( function(n) {
+		    console.log(n);
 		    return { name: n.key, standards: n.value };
 		})
 	    }
