@@ -16,31 +16,29 @@ var BROWSER = (function () {
     // private event handlers
 
     var categoryClick = function (event) {
-	state.category = $(event.target).data('category');
-	state.standard = null;
-	state.nodes    = null;
+	var category = $(event.target).data('category');
+	updateState(category);
 	updateHashLocation();
 	return false;
     };
 
     var standardClick = function (event) {
-	state.standard = $(event.target).data('standard');
-	state.category = $(event.target).data('category')
+	var standard = $(event.target).data('standard');
+	var category = $(event.target).data('category')
 	    || $(event.target).closest('.category').data('category');
-	state.nodes    = null;
+	updateState(category, standard);
 	updateHashLocation();	
 	return false;
     };
 
     var gradeChange = function (event) {
-	var target = $(event.target);
-	state.standard = $target.data('standard');
-	state.category = $target.data('category')
+	var $target = $(event.target);
+	var standard = $target.data('standard');
+	var category = $target.data('category')
 	    || $(event.target).closest('.category').data('category');
-	state.grade = $target.val();
+	var grade = $target.val();
 
-	$.cookie('grade-filter', grade);
-
+	updateState(category, standard, grade);
 	updateHashLocation();
 	return false;
     };
@@ -50,26 +48,44 @@ var BROWSER = (function () {
 	var $ancestors = $target.parents('.node');
 	var $container = $target.closest('.node');
 	var parentId   = $container.data('id');
-	var newNodes   = [];
+	var nodes      = [];
 	
 	// handle toggle and button
-	if( $target.text() === '[ + ]' ) $target.text('[ - ]');
-	else $target.text('[ + ]');
-	    
+	var closed = $target.text() === '[ + ]' ? true : false;
+
 	$container.children('.children').toggle();
 
-	// walk up the DOM and find IDs of all nodes in hierarchy
-	$ancestors.each( function (i, e) {
-	    newNodes.push($(e).data('id'));
-	});
-	
-	state.nodes = newNodes;
-	updateHashLocation();
+	if(closed) {
+	    $target.text('[ - ]'); 
 
+	    // walk up the DOM and find IDs of all nodes in hierarchy
+	    $ancestors.each( function (i, e) {
+		nodes.unshift($(e).data('id'));
+	    });
+
+	    updateNodes(nodes);
+	    updateHashLocation();
+	}
+	else {
+	    $target.text('[ + ]');
+	}
 	return false;
     };
 
     // private methods
+
+    var updateState = function (category, standard, grade) {
+	state.category = category;
+	state.standard = standard;
+        if (grade) {
+	    state.grade = grade;
+	    $.cookie('grade-filter', grade);
+	}
+    };
+
+    var updateNodes = function (nodes) {
+	state.nodes = nodes;
+    };
 
     var updateHashLocation = function () {
 	var hashParts = [];
@@ -86,7 +102,7 @@ var BROWSER = (function () {
 		}
 	    }
 	}
-
+	
 	location.hash = hashParts.join('/');
     };
 
@@ -121,6 +137,19 @@ var BROWSER = (function () {
 	link.show();
 
 	return link;
+    };
+
+    // returns function to descend into the node path provided
+    // moves to next node after each is finished loading
+    var recursiveDescent = function recursiveDescent (nodes) {
+	return function () {
+	    var node      = nodes.shift();
+	    var $target   = $(document).find("[data-id='" + node + "']");
+	    if($target.length) {
+		$target.children('.expand-node').text('[ - ]');
+		loadNodes($target, { parent: node }, recursiveDescent(nodes));
+	    }
+	};
     };
 
     var loadResources = function ($div, callback) {
@@ -197,89 +226,88 @@ var BROWSER = (function () {
 	    $(document).on( 'click',  '.expand-node',   childClick );
 
 	    // load the list of all categories and standards
-	    $screen.load('/standards/');
-	    
-	    $(window).hashchange( function () {
-		var hashParts = unescape(location.hash).split('/');
-
-		var category = hashParts.shift();
-		var standard = hashParts.shift();
-		var grade    = hashParts.shift();
-		var nodes    = hashParts; // only nodes are left over, if any
-
-		// remove leading #
-		if (category) category = category.substring(1);
-
-		// set grade in case of bookmark
-		if (grade) $.cookie('grade-filter', grade);
-
-		state.category = category;
-		state.standard = standard;
-		state.grade    = $.cookie('grade-filter') || 'K';
-		state.nodes    = nodes;
-
-		var categoryUrl = '/standards/';
-
-		if (state.category) categoryUrl += escape(state.category);
-
-		var childrenToLoad = [];
-
-		// returns function to descend into the node path provided
-		// moves to next node after each is finished loading
-		var recursiveDescent = function recursiveDescent (nodes) {
-		    return function () {
-			var node      = nodes.shift();
-			var $target   = $("[data-id='" + node + "']");
-			var $children = $target.parent().children('.children');
-			var parent    = { parent: node };
-			if(nodes.length > 1) {
-			    loadNodes($children, parent, recursiveDescent(nodes));
-			}
-		    };
-	        };
-
-		// load the display
-		if (!state.category) {
-		    $screen.load(categoryUrl, function () {
-			CRUMBS.clear($('#crumbs'));
-		    });
-		}
-		else if (!state.standard) {
-		    $screen.load(categoryUrl, function () {
-			CRUMBS.clear($('#crumbs'));
-			CRUMBS.push($('#crumbs'), createCategoryLink(state.category));
-		    });
-		}
-		else {
+	    $screen.load('/standards/', function () {
+		$(window).hashchange( function () {
+		    var hashParts = unescape(location.hash).split('/');
+		    
+		    var category = hashParts.shift();
+		    var standard = hashParts.shift();
+		    var grade    = hashParts.shift();
+		    var nodes    = hashParts; // only nodes are left over, if any
+		    
+		    var categoryUrl = '/standards/';
+		    
+		    var childrenToLoad = [];
+		    var first;
+		    
+		    // remove leading # and set Url
+		    if (category) {
+			category     = category.substring(1);
+			categoryUrl += escape(category);
+		    }
+		    
+		    updateState(category, standard, grade);
+		    updateNodes(nodes);
+		    
+		    // load the display
+		    if (!state.category) {
+			$screen.load(categoryUrl, function () {
+			    CRUMBS.clear($('#crumbs'));
+			});
+			return;
+		    }
+		    
+		    if (!state.standard) {
+			$screen.load(categoryUrl, function () {
+			    CRUMBS.clear($('#crumbs'));
+			    CRUMBS.push($('#crumbs'), createCategoryLink(state.category));
+			});
+			return;
+		    }
+		    
+		    var screenLoaded = $screen.find('.node').length > 0 ? true : false;
+		    var callback;
+		    var $loadLocation;
+		    var discriminator;
+		    
 		    // clear, then add the crumbs to the trail
 		    CRUMBS.clear($('#crumbs'));
 		    CRUMBS.push($('#crumbs'), createCategoryLink(state.category));
 		    CRUMBS.push($('#crumbs'), createStandardLink(state.category, state.standard));
 		    CRUMBS.push($('#crumbs'), createGradeLink(state.category, state.standard, state.grade));
-
+		    
+		    // either load screen, no nodes open
+		    // or screen loaded, open nodes
+		    // or load screen, then open nodes
+		    if (!screenLoaded || !state.nodes || state.nodes.length === 0) {
+			$loadLocation = $screen;
+			$screen.html('');
+			discriminator = { category: category, standard: standard };
+	            }
+		    
 		    // find out what part of the node tree needs to be loaded
 		    nodes.forEach( function (node) {
 			var $target = $("[data-id='" + node + "']").find('.children');
 			if (!$target.length) childrenToLoad.push(node);
 		    });
-
-		    if (childrenToLoad.length > 0) {
-			loadNodes($screen,
-				  { parent: childrenToLoad.shift() }, 
-				  recursiveDescent(childrenToLoad)
-				 );
+		    
+		    if (state.nodes && state.nodes.length > 0) {
+			callback = recursiveDescent(childrenToLoad);
 		    }
-		    else {
-			$screen.html('');
-			loadNodes($screen,
-				  { category: category, standard: standard }
-				 );
+		    
+		    if (screenLoaded && state.nodes && state.nodes.length > 0) {
+			first = childrenToLoad.shift();		    
+			$loadLocation = $("[data-id='" + first + "']");
+			discriminator = { parent: first };
+			callback = recursiveDescent(childrenToLoad);
 		    }
-		}
+		    
+		    loadNodes($loadLocation, discriminator, callback);
+		});
+		
+		// fire the hashchange event in case bookmarked hash supplied
+		$(window).hashchange();
 	    });
-
-	    // fire the hashchange event in case bookmarked hash supplied
-	    $(window).hashchange();
 	}
     };
 

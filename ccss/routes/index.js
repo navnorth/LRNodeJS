@@ -11,8 +11,8 @@ var categoriesView = standardsDb.ddoc('nodes').view('categories');
 var standardsView  = standardsDb.ddoc('nodes').view('standards');
 
 // route to display nodes hierarchically
-//   body.standard is the set the nodes belong to
-//   OR body.parent is the parent ID of the nodes to load
+//   set body.category + body.standard for standard's child nodes
+//   OR body.parent for child nodes of parent 
 //   cookies.grade-filter determines grade of nodes to load
 //     defaults to K/Kindergarten
 exports.nodes = function( request, response, next ) {
@@ -59,13 +59,15 @@ exports.nodes = function( request, response, next ) {
 	};
 
 	standardsView.query(standardsParams, function (err, result) {
+	    console.log(standardsParams);
 	    console.log(result);
-	    console.log(grade);
 	    nodesParams.startkey = nodesParams.endkey = [ result.rows[0].value, grade ];
 	    nodesView.query(nodesParams, nodesFinished);
 	});
     }
     else {
+	console.log('parent: ' + parent);
+	console.log('grade: ' + grade);
 	nodesParams.startkey = nodesParams.endkey = [ parent, grade ];
 	nodesView.query(nodesParams, nodesFinished);
     }
