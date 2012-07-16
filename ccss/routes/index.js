@@ -8,28 +8,35 @@ var standardsDb  = server.db('standards');
 // views
 var nodesView      = standardsDb.ddoc('nodes').view('parent-grade');
 var categoriesView = standardsDb.ddoc('nodes').view('categories');
+var standardsView  = standardsDb.ddoc('nodes').view('standards');
 
 // route to display nodes hierarchically
 //   body.standard is the set the nodes belong to
-//   body.parent is the parent ID of the nodes to load
+//   OR body.parent is the parent ID of the nodes to load
 //   cookies.grade-filter determines grade of nodes to load
 //     defaults to K/Kindergarten
 exports.nodes = function( request, response, next ) {
+    var category = request.body.category           || null;
+    var standard = request.body.standard           || null;
     var parent   = request.body.parent             || null;
     var grade    = request.cookies['grade-filter'] || 'K';
 
-    if (parent === null) return next(new Error('No parent given'));
+    if ((!category && !standard && !parent)
+	|| (category && !standard)
+	|| (!category && standard)) {
+	return next(new Error('Must provide cateogry + standard or parent'));
+    }
 
-    parent = unescape(parent);
-    console.log('parent: ' + parent);
+    if (category) category = unescape(category);
+    if (standard) standard = unescape(standard);
+    if (parent)   parent   = unescape(parent);
     
-    var query = {
-	include_docs: true,
-	startkey: [ parent, grade ],
-	endkey:   [ parent, grade ]
+    var nodesParams = {
+	include_docs: true
     };
 
-    nodesView.query(query, function(err, result) {
+    var nodesFinished = function(err, result) {
+	console.log(result);
 	if (err) return next(err);
 
 	var docs = result.rows.map( function(n) { return n.value; } );
@@ -40,7 +47,28 @@ exports.nodes = function( request, response, next ) {
 	viewOptions.locals.nodes = docs;
 
 	response.render('nodes.html', viewOptions);
-    });
+    };
+
+    var standardsParams;
+
+    if (standard) {
+	standardsParams = {
+	    include_docs: true,
+	    startkey: [ category, standard ],
+	    endkey: [ category, standard ]
+	};
+
+	standardsView.query(standardsParams, function (err, result) {
+	    console.log(result);
+	    console.log(grade);
+	    nodesParams.startkey = nodesParams.endkey = [ result.rows[0].value, grade ];
+	    nodesView.query(nodesParams, nodesFinished);
+	});
+    }
+    else {
+	nodesParams.startkey = nodesParams.endkey = [ parent, grade ];
+	nodesView.query(nodesParams, nodesFinished);
+    }
 };
 
 // route for displaying categorized standards
@@ -62,7 +90,6 @@ exports.standards = function( request, response, next ) {
 	    layout: false,
 	    locals: {
 		categories: result.rows.map( function(n) {
-		    console.log(n);
 		    return { name: n.key, standards: n.value };
 		})
 	    }

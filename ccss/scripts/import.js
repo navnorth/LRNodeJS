@@ -78,7 +78,7 @@ var importNodes = function importNodes(nodes, parent) {
 	doc = standardsDb.doc(node);
 
         doc.save( function(err, result) {
-	    console.log(result);
+	    console.log(result.id);
 	    if(err) { console.log('Error saving doc ' + node.id); throw new Error(err); }
 	    importNodes(children, result.id);
 	});
@@ -118,7 +118,6 @@ var addCategoryAndStandard = function (callback) {
 
     categoryDoc.save( function(err, result) {
 	if(err) { console.log('Error saving category'); return callback(err); }
-
 
 	console.log(result);
 

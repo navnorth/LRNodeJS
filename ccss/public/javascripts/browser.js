@@ -7,7 +7,7 @@ var BROWSER = (function () {
     var $screen;
 
     var state = {
-	catgory: undefined,
+	category: undefined,
 	standard: undefined,
 	grade: $.cookie('grade-filter') || 'K',
 	nodes: []
@@ -17,6 +17,8 @@ var BROWSER = (function () {
 
     var categoryClick = function (event) {
 	state.category = $(event.target).data('category');
+	state.standard = null;
+	state.nodes    = null;
 	updateHashLocation();
 	return false;
     };
@@ -25,7 +27,8 @@ var BROWSER = (function () {
 	state.standard = $(event.target).data('standard');
 	state.category = $(event.target).data('category')
 	    || $(event.target).closest('.category').data('category');
-	updateHashLocation();
+	state.nodes    = null;
+	updateHashLocation();	
 	return false;
     };
 
@@ -60,8 +63,6 @@ var BROWSER = (function () {
 	    newNodes.push($(e).data('id'));
 	});
 	
-	console.log(newNodes);
-
 	state.nodes = newNodes;
 	updateHashLocation();
 
@@ -212,22 +213,25 @@ var BROWSER = (function () {
 		// set grade in case of bookmark
 		if (grade) $.cookie('grade-filter', grade);
 
+		state.category = category;
+		state.standard = standard;
+		state.grade    = $.cookie('grade-filter') || 'K';
+		state.nodes    = nodes;
+
 		var categoryUrl = '/standards/';
 
-		if (category) categoryUrl += escape(category);
+		if (state.category) categoryUrl += escape(state.category);
 
 		var childrenToLoad = [];
-		var parent;
 
 		// returns function to descend into the node path provided
 		// moves to next node after each is finished loading
 		var recursiveDescent = function recursiveDescent (nodes) {
 		    return function () {
 			var node      = nodes.shift();
-			console.log('loading: ' + node);
 			var $target   = $("[data-id='" + node + "']");
 			var $children = $target.parent().children('.children');
-			var parent    = { parent: parentId };
+			var parent    = { parent: node };
 			if(nodes.length > 1) {
 			    loadNodes($children, parent, recursiveDescent(nodes));
 			}
@@ -235,41 +239,41 @@ var BROWSER = (function () {
 	        };
 
 		// load the display
-		if (!category) {
+		if (!state.category) {
 		    $screen.load(categoryUrl, function () {
 			CRUMBS.clear($('#crumbs'));
 		    });
 		}
-		else if (!standard) {
+		else if (!state.standard) {
 		    $screen.load(categoryUrl, function () {
 			CRUMBS.clear($('#crumbs'));
-			CRUMBS.push($('#crumbs'), createCategoryLink(category));
+			CRUMBS.push($('#crumbs'), createCategoryLink(state.category));
 		    });
 		}
 		else {
 		    // clear, then add the crumbs to the trail
 		    CRUMBS.clear($('#crumbs'));
-		    CRUMBS.push($('#crumbs'), createCategoryLink(category));
-		    CRUMBS.push($('#crumbs'), createStandardLink(category, standard));
-		    CRUMBS.push($('#crumbs'), createGradeLink(category, standard, grade));
+		    CRUMBS.push($('#crumbs'), createCategoryLink(state.category));
+		    CRUMBS.push($('#crumbs'), createStandardLink(state.category, state.standard));
+		    CRUMBS.push($('#crumbs'), createGradeLink(state.category, state.standard, state.grade));
 
 		    // find out what part of the node tree needs to be loaded
 		    nodes.forEach( function (node) {
 			var $target = $("[data-id='" + node + "']").find('.children');
-			var childrenArePresent = $target ? true : false;
-			if (!childrenArePresent) {
-			    childrenToLoad.push(node);
-			}
+			if (!$target.length) childrenToLoad.push(node);
 		    });
 
 		    if (childrenToLoad.length > 0) {
-			parent = { parent: childrenToLoad.shift() };
-			loadNodes($screen, parent, recursiveDescent(childrenToLoad));
+			loadNodes($screen,
+				  { parent: childrenToLoad.shift() }, 
+				  recursiveDescent(childrenToLoad)
+				 );
 		    }
 		    else {
-			parent = { parent: standardId };
 			$screen.html('');
-			loadNodes($screen, parent);
+			loadNodes($screen,
+				  { category: category, standard: standard }
+				 );
 		    }
 		}
 	    });
