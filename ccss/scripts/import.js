@@ -33,8 +33,6 @@ var standard   = argv.standard || null;
 var category   = argv.category || null;
 var options    = {};
 
-// TODO don't import cat + standard combo if already rpesent (or overwrite)
-
 if (standard === null) {
     console.log('Standard name was not specified');
     return 1;
@@ -109,32 +107,49 @@ var dbExists = function (checkName, callback) {
 
 // function to add category
 var addCategoryAndStandard = function (callback) {
-    // TODO don't create cat if present
     var categoryDoc = standardsDb.doc({
 	category: true,
 	id: category,
 	hasChildren: true
     });
 
-    categoryDoc.save( function(err, result) {
+    var categoriesView = standardsDb.ddoc('nodes').view('categories');
+    var query = {
+      group: true,
+      startkey: category,
+      endkey: category
+    };
+
+    categoriesView.query(query, function(err, result) {
+      if (err) return callback(err);
+
+      var standardDoc = standardsDb.doc({
+	standard: true,
+	id: standard,
+	categoryName: category,
+	hasChildren: true
+      });
+
+      if (result.rows && result.rows > 0) {
+	standardDoc.parent = result.id;
+	standardDoc.save( function(err, result) {
+	  if(err) { console.log('Error saving standard'); return callback(err); }
+	  callback(null, result.id);
+	});
+	return;
+      }
+
+      categoryDoc.save( function(err, result) {
 	if(err) { console.log('Error saving category'); return callback(err); }
 
-	console.log(result);
-
-	var standardDoc = standardsDb.doc({
-	    standard: true,
-	    id: standard,
-	    categoryName: category,
-	    hasChildren: true,
-	    parent: result.id
-	});
-
+	standardDoc.parent = result.id;
 	standardDoc.save( function(err, result) {
 	    if(err) { console.log('Error saving standard'); return callback(err); }
 	    callback(null, result.id);
 	});
+      });
     });
-}
+};
 
 // function to read data into the db
 var startImport = function (standard, category) {
