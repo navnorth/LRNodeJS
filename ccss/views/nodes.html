@@ -1,14 +1,22 @@
 <ul>
-  {{#nodes}}
-    <li class="node" data-id="{{_id}}">
-      {{#hasChildren}}
-        <a href="#" class="expand-node">[ + ]</a>
-      {{/hasChildren}}
-      <b class="statement-notation">{{{asn_statementNotation}}}</b>
-      <span class="text">{{{text}}}</span>
-      <div class="resources">
-	<span class="resource-count" data-id="{{asn_identifier}}"></span>
-      </div>
-    </li>
-  {{/nodes}}
+	{{#nodes}} 
+	<li class="node" data-id="{{_id}}">
+		{{#hasChildren}} 
+			<a href="#" class="expand-node">[ + ]</a>
+		{{/hasChildren}} 
+		<b class="statement-notation">
+			{{{asn_statementNotation}}}
+		</b>
+		<span class="text">{{{text}}}</span>
+		
+		<!-- for now, only show resource links for standard level, not parents -->
+		{{^hasChildren}} 
+		<div class="resources">
+			<span class="resource-count" data-id="{{asn_identifier}}">
+			</span>
+		</div>
+		{{/hasChildren}}
+		
+	</li>
+	{{/nodes}} 
 </ul>
