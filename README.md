@@ -29,6 +29,8 @@ academic standards data stored in couchDB.
  
 ## License
 
+Copyright 2012 [Navigation North Learning Solutions LLC](http://navigationnorth.com)
+
 Licensed under the Apache License, Version 2.0 (the "License");	  	
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -43,3 +45,4 @@ limitations under the License.
 
 Copyright 2012 [Navigation North Learning Solutions LLC](http://navigationnorth.com)
 
+This project has been funded at least or in part with Federal funds from the U.S. Department of Education under Contract Number ED-04-CO-0040/0010. The content of this publication does not necessarily reflect the views or policies of the U.S. Department of Education nor does mention of trade names, commercial products, or organizations imply endorsement by the U.S. Government.
