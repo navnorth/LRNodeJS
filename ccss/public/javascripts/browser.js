@@ -53,6 +53,7 @@ var BROWSER = (function () {
 	var grade = $target.val();
 
 	updateState(category, standard, grade);
+        updateNodes([]);
 	updateHashLocation();
 	return false;
     };
