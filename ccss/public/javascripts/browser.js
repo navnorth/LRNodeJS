@@ -177,6 +177,7 @@ var BROWSER = (function () {
 	    
 	    $.ajax(resourceServiceUrl, {
 		data: {discriminator: id},
+                dataType: 'json',
 		success: function (resources) {
 		    var count = resources.documents.length;
 		    
