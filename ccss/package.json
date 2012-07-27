@@ -1,11 +1,12 @@
 {
-  "name": "LRNodeJs",
+  "name": "LRNodeJs_CCSS",
   "version": "0.0.1",
   "dependencies": {
-    "express": "latest",
+    "express": "2.5.9",
     "mustache":"latest",
     "optimist":"latest",
     "couchdb-api":"latest",
-    "prompt":"latest"
+    "prompt":"latest",
+    "config":"latest"
   }
 }

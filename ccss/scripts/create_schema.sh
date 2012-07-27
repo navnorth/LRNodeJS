@@ -1,5 +1,8 @@
 #!/bin/sh
 
+#   Copyright 2012 Navigation North Learning Solutions LLC
+#   Licensed under the Apache License, Version 2.0 (the "License");
+
 # ------ 20 Jun 2012 ------ #
 # Create Database
 # Standards - stores hierarchical education data for imported standards

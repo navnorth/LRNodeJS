@@ -1,1 +1,4 @@
 ccss/node_modules/
+ccss/scripts/tmp/
+ccss/pids/
+ccss/logs/
