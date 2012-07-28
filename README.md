@@ -24,6 +24,7 @@ academic standards data stored in couchDB.
 
 ## Known Issues
 
+ * Resource alignments not loading yet in IE8 due to cross-domain request blocking. Looking for solutions to this.
  * not yet compatible with Express 3.0 (due to removal of the `register` function)
  * not yet compatible with Node.js 0.8 (due to couchdb-api compatibility)
  
