@@ -212,7 +212,10 @@ var BROWSER = (function () {
 		    });
 		    
 		    $resourceLink.replaceWith($newResourceLink);
-		}
+		},
+	        error: function (err) {
+		    alert(err);
+	        }
 	    }); 
 	});
     };
@@ -302,7 +305,7 @@ var BROWSER = (function () {
 	            }
 		    
 		    // find out what part of the node tree needs to be loaded
-		    nodes.forEach( function (node) {
+		    $.each(nodes, function (i, node) {
 			var $target = $("[data-id='" + node + "']").find('.children');
 			if (!$target.length) childrenToLoad.push(node);
 		    });
