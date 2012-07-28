@@ -212,10 +212,7 @@ var BROWSER = (function () {
 		    });
 		    
 		    $resourceLink.replaceWith($newResourceLink);
-		},
-	        error: function (err) {
-		    alert(err);
-	        }
+		}
 	    }); 
 	});
     };
