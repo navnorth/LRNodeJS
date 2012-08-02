@@ -15,9 +15,6 @@
 var BROWSER = (function () {
 
     // private fields
-
-    var resourceServiceUrl = 'http://localhost/extract/standards-alignment-related/resource-by-discriminator'; // default value
-
     var $screen;
 
     var state = {
@@ -176,7 +173,7 @@ var BROWSER = (function () {
 	    
 	    $resourceLink.text( 'loading...' );
 	    
-	    $.ajax(resourceServiceUrl, {
+	    $.ajax('/resources', {
 		data: {discriminator: id},
                 dataType: 'json',
 		success: function (resources) {
