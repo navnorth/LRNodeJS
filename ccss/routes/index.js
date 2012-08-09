@@ -14,6 +14,7 @@
 
 var couchdb = require('couchdb-api');
 var config  = require('config');
+var r       = require('request');
 
 // couchdb db
 var server       = couchdb.srv('localhost', 5984, false, true);
@@ -50,7 +51,6 @@ exports.nodes = function( request, response, next ) {
     };
 
     var nodesFinished = function(err, result) {
-	console.log(result);
 	if (err) return next(err);
 
 	var docs = result.rows.map( function(n) { return n.value; } );
@@ -73,15 +73,11 @@ exports.nodes = function( request, response, next ) {
 	};
 
 	standardsView.query(standardsParams, function (err, result) {
-	    console.log(standardsParams);
-	    console.log(result);
 	    nodesParams.startkey = nodesParams.endkey = [ result.rows[0].value, grade ];
 	    nodesView.query(nodesParams, nodesFinished);
 	});
     }
     else {
-	console.log('parent: ' + parent);
-	console.log('grade: ' + grade);
 	nodesParams.startkey = nodesParams.endkey = [ parent, grade ];
 	nodesView.query(nodesParams, nodesFinished);
     }
@@ -124,7 +120,6 @@ exports.browser = function( request, response, next ) {
 
 	var viewOptions = {
 	    locals: {
-		resourceServiceUrl: config.resourceService.url,
 		categories: result.rows.map( function(n) {
 		    return { name: n.key, standards: n.value };
 		})
@@ -133,4 +128,15 @@ exports.browser = function( request, response, next ) {
 
 	response.render('browser.html', viewOptions);
     });    
+};
+
+exports.resources = function (request, response, next) {
+  var requestOptions = {
+    url: config.resourceService.url,
+    qs: request.query
+  };
+
+  var external = r(requestOptions);
+
+  request.pipe(external).pipe(response)
 };

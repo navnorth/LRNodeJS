@@ -62,6 +62,7 @@ app.get('/standards/:category?', routes.standards);
 app.get('/browser', routes.browser);
 app.post('/nodes/', routes.nodes);
 app.get('/related', routes.related);
+app.get('/resources', routes.resources);
 
 // start
 
