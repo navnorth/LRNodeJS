@@ -24,7 +24,7 @@ curl -X PUT http://localhost:5984/standards/_design/nodes --data '
 	"map": "function(doc) { if (doc.standard === true) emit([doc.categoryName, doc.id], doc._id); }"
     },
     "parent-grade": {
-	"map": "function(doc) { var gradeInfo, grade; if(doc.standard === true || doc.category === true) return; for (gradeInfo = 0; gradeInfo < doc.dcterms_educationLevel.length; gradeInfo++) { grade = doc.dcterms_educationLevel[gradeInfo].prefLabel; emit([doc.parent, grade], doc); }}"
+        "map": "function(doc) { if(doc.standard === true || doc.category === true) return; var grades = doc.dcterms_educationLevel; if(grades.forEach === undefined) grades = [grades]; grades.forEach(function(i,g) { var grade = grades[g].prefLabel; emit([doc.parent, grade], doc); }); }"
     }
   }
 }'
