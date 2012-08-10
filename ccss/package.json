@@ -2,11 +2,14 @@
   "name": "LRNodeJs_CCSS",
   "version": "0.0.1",
   "dependencies": {
-    "express": "2.5.9",
-    "mustache":"latest",
-    "optimist":"latest",
-    "couchdb-api":"latest",
-    "prompt":"latest",
-    "config":"latest"
+    "express": "2.5.11",
+    "mustache":"0.4.0",
+    "optimist":"0.3.4",
+    "couchdb-api":"1.1.4",
+    "prompt":"0.2.3",
+    "config":"0.4.15",
+    "connect":"2.4.3",
+    "qs":"0.5.0",
+    "request":"2.9.203"
   }
 }
