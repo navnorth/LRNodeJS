@@ -20,6 +20,11 @@ ul {
     margin: 8px;
 }
 
+#browser #footer {
+    float: left;
+    margin-left: 160px;
+}
+
 #hierarchy {
     height: 512px;
     width: 768px;
